@@ -12,6 +12,7 @@ from app.config import load_config
 from app.drift import DriftService
 from app.providers import AWSProvider, AzureProvider, GCPProvider
 
+
 load_dotenv(".env")
 
 logging.basicConfig(
