@@ -51,7 +51,7 @@ build/
 *.sqlite3
 postgres_data/
 
-# Cache
+# Cache 
 .cache/
 *.cache
 
