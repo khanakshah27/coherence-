@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Protocol
 
-import requests
+import requests 
 
 from app.models import DriftItem, Scan, RemediationRequest
 
