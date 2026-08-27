@@ -282,7 +282,7 @@ Understand infrastructure changes that affect their services
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
+Contributions welcome!
 
 ## License
 
