@@ -1,7 +1,5 @@
 # Coherence - Infrastructure State Drift Detection & Auto-Remediation
 
-![Coherence Banner](https://via.placeholder.com/1200x200?text=Coherence+DevOps+Platform)
-
 **Coherence** is an enterprise-grade infrastructure state management platform that continuously detects and remediates drift between your Infrastructure-as-Code (IaC) and actual cloud resources.
 
 ## Problem Statement
