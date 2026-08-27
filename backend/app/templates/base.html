@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Coherence</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <div style="display:flex;align-items:center;gap:2rem;">
+                <a href="/" class="brand">Coherence</a>
+                <div class="nav-links">
+                    <a href="/" class="nav-link {{ 'active' if active_page == 'dashboard' else '' }}">Dashboard</a>
+                    <a href="/drifts" class="nav-link {{ 'active' if active_page == 'drifts' else '' }}">Drifts</a>
+                    <a href="/remediations" class="nav-link {{ 'active' if active_page == 'remediations' else '' }}">Remediations</a>
+                    <a href="/reports" class="nav-link {{ 'active' if active_page == 'reports' else '' }}">Reports</a>
+                </div>
+            </div>
+            <div class="nav-meta">
+                <span>v1.0.0</span>
+                <span class="dot" title="Connected"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <div class="footer">
+        Coherence — Infrastructure State Drift Detection &amp; Auto-Remediation · MIT License
+    </div>
+</body>
+</html>

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <h2 class="page-title">Remediations</h2>
+    <form method="get" action="/remediations">
+        <button class="btn btn-secondary" type="submit">Refresh</button>
+    </form>
+</div>
+
+<div class="kpi-grid">
+    <div class="card">
+        <div class="kpi-label">Pending Approval</div>
+        <div class="kpi-value yellow">{{ summary.pending }}</div>
+    </div>
+    <div class="card">
+        <div class="kpi-label">Executing</div>
+        <div class="kpi-value blue">{{ summary.executing }}</div>
+    </div>
+    <div class="card">
+        <div class="kpi-label">Succeeded</div>
+        <div class="kpi-value green">{{ summary.success }}</div>
+    </div>
+    <div class="card">
+        <div class="kpi-label">Failed</div>
+        <div class="kpi-value red">{{ summary.failed }}</div>
+    </div>
+</div>
+
+<div class="table-card">
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Drift</th>
+                    <th>Action</th>
+                    <th>Status</th>
+                    <th>Approval</th>
+                    <th>Dry Run</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if remediations %}
+                    {% for r in remediations %}
+                    <tr>
+                        <td class="mono">{{ r.id }}</td>
+                        <td class="mono">{{ r.drift_id }}</td>
+                        <td><span class="badge" style="background:#ede9fe;color:#5b21b6;text-transform:capitalize;">{{ r.action_type.replace('_', ' ') }}</span></td>
+                        <td><span class="badge badge-{{ 'success' if r.status == 'success' else ('failed' if r.status == 'failed' else 'pending') }}">{{ r.status }}</span></td>
+                        <td style="text-transform:capitalize;">{{ r.approval_status }}</td>
+                        <td>{{ 'Yes' if r.dry_run else 'No' }}</td>
+                        <td class="muted small">{{ r.created_at }}</td>
+                        <td>
+                            {% if r.approval_status == 'pending' %}
+                            <form method="post" action="/remediations/{{ r.id }}/approve" class="inline">
+                                <button type="submit" style="background:none;border:none;color:#16a34a;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0;">Approve</button>
+                            </form>
+                            {% elif r.approval_status == 'approved' and r.status == 'pending' %}
+                            <form method="post" action="/remediations/{{ r.id }}/execute" class="inline">
+                                <button type="submit" style="background:none;border:none;color:#2563eb;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0;">Execute</button>
+                            </form>
+                            {% elif r.status == 'success' %}
+                            <form method="post" action="/remediations/{{ r.id }}/rollback" class="inline">
+                                <button type="submit" style="background:none;border:none;color:#dc2626;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0;">Rollback</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="8" class="empty-row">No remediations yet.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

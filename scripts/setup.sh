@@ -58,18 +58,15 @@ docker-compose up -d
 echo "⏳ Waiting for services to be ready..."
 sleep 5
 
-# Run database migrations
-echo "🗄️ Running database migrations..."
-docker-compose exec -T backend ./coherence-server migrate
+# The backend runs its database migrations automatically on startup.
 
 echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "📋 Next steps:"
-echo "  1. Backend API: http://localhost:8080"
-echo "  2. Frontend: http://localhost:3000"
-echo "  3. Prometheus: http://localhost:9090"
-echo "  4. Grafana: http://localhost:3001 (admin/admin)"
+echo "  1. Dashboard & API: http://localhost:8080"
+echo "  2. Prometheus: http://localhost:9090"
+echo "  3. Grafana: http://localhost:3001 (admin/admin)"
 echo ""
 echo "📚 Documentation: https://coherence-docs.dev"
 echo ""

@@ -452,13 +452,3 @@ client = Client(
 scans = client.scans.list()
 drift = client.drifts.get('drift_123')
 ```
-
-### Go
-```go
-import "coherence.dev/sdk"
-
-client := sdk.NewClient("http://localhost:8080/api/v1", "YOUR_JWT_TOKEN")
-
-scans, err := client.Scans.List(ctx)
-drift, err := client.Drifts.Get(ctx, "drift_123")
-```

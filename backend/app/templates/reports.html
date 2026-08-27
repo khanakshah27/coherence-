@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <h2 class="page-title">Reports</h2>
+    <form method="post" action="/reports/generate">
+        <button class="btn btn-primary" type="submit">+ Generate Report</button>
+    </form>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>Compliance Score by Domain</h3>
+        <div class="bar-chart">
+            {% for row in compliance_domains %}
+            <div class="bar-col">
+                <div class="small muted">{{ row.score }}</div>
+                <div class="bar" style="height:{{ row.score * 2 }}px;background:#3b82f6;"></div>
+                <div class="bar-label">{{ row.subject }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card">
+        <h3>Overall Compliance Summary</h3>
+        <div>
+            {% for item in compliance_rules %}
+            <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #f3f4f6;">
+                <span class="small">{{ item.rule }}</span>
+                <span class="small {{ 'green' if item.passed else 'red' }}" style="font-weight:600;">{{ 'Pass' if item.passed else 'Fail' }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-weight:600;font-size:0.85rem;">
+            <span>Overall Score</span>
+            <span class="blue">{{ passed_rules }}/{{ total_rules }} ({{ compliance_score }}%)</span>
+        </div>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">Generated Reports</div>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Report ID</th>
+                    <th>Cloud</th>
+                    <th>Total Resources</th>
+                    <th>Drifted</th>
+                    <th>Drift %</th>
+                    <th>Cost Impact</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if reports %}
+                    {% for r in reports %}
+                    <tr>
+                        <td class="mono">{{ r.id }}</td>
+                        <td>{{ r.cloud_provider }}</td>
+                        <td>{{ r.total_resources }}</td>
+                        <td class="red">{{ r.drifted_resources }}</td>
+                        <td>{{ r.drift_percentage }}%</td>
+                        <td class="yellow">${{ r.cost_impact }}</td>
+                        <td class="muted small">{{ r.created_at }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="7" class="empty-row">No reports yet. Generate one from a completed scan.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

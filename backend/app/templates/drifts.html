@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <h2 class="page-title">Drift Items</h2>
+</div>
+
+<form method="get" action="/drifts" class="filters">
+    <label>Severity:
+        <select name="severity" onchange="this.form.submit()">
+            <option value="" {{ 'selected' if not filter_severity }}>All</option>
+            {% for s in ['critical', 'high', 'medium', 'low', 'info'] %}
+            <option value="{{ s }}" {{ 'selected' if filter_severity == s }}>{{ s|capitalize }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <label>
+        <input type="checkbox" name="show_resolved" value="1" onchange="this.form.submit()" {{ 'checked' if show_resolved }}>
+        Show resolved
+    </label>
+    <span class="muted small" style="margin-left:auto;">{{ drifts|length }} items</span>
+</form>
+
+<div class="table-card">
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Severity</th>
+                    <th>Title</th>
+                    <th>Resource</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if drifts %}
+                    {% for d in drifts %}
+                    <tr {{ 'style=opacity:0.6' if d.is_resolved }}>
+                        <td><span class="badge badge-{{ d.severity }}">{{ d.severity|upper }}</span></td>
+                        <td>
+                            <div style="font-weight:600;">{{ d.title }}</div>
+                            <div class="small muted">{{ d.description }}</div>
+                        </td>
+                        <td>
+                            <div class="mono">{{ d.resource_id }}</div>
+                            <div class="small muted">{{ d.resource_type }} · {{ d.cloud_provider|upper }}</div>
+                        </td>
+                        <td><span class="badge badge-neutral" style="text-transform:capitalize;">{{ d.category }}</span></td>
+                        <td>
+                            {% if d.is_resolved %}
+                                <span class="green small" style="font-weight:600;">Resolved</span>
+                            {% else %}
+                                <span class="yellow small" style="font-weight:600;">Open</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not d.is_resolved %}
+                            <form method="post" action="/drifts/{{ d.id }}/resolve" class="inline">
+                                <input type="hidden" name="severity" value="{{ filter_severity }}">
+                                <input type="hidden" name="show_resolved" value="{{ '1' if show_resolved else '' }}">
+                                <button type="submit" class="btn-link" style="background:none;border:none;color:#2563eb;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0;">Resolve</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="6" class="empty-row">No drift items found.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

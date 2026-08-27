@@ -29,8 +29,7 @@ Coherence automatically:
 
 ### Prerequisites
 - Docker & Docker Compose
-- Go 1.21+
-- Node.js 18+
+- Python 3.11+
 - PostgreSQL 14+
 - AWS CLI (for AWS testing)
 
@@ -42,37 +41,33 @@ git clone https://github.com/yourusername/coherence.git
 cd coherence
 docker-compose up -d
 
-# Run migrations
-./scripts/migrate.sh
+# Or run the backend directly (migrations run automatically on startup)
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8080
 
-# Start backend
-cd backend && go run cmd/main.go
-
-# Start frontend (in another terminal)
-cd frontend && npm install && npm start
-
-# Access dashboard
-open http://localhost:3000
+# Access the dashboard
+open http://localhost:8080
 ```
 
 ### Using the CLI
 
 ```bash
 # Install
-go install ./cli/coherence
+cd cli && pip install -r ../backend/requirements.txt
 
 # Configure
-coherence config set aws-profile default
-coherence config set terraform-path ./terraform
+python coherence.py config set aws-profile default
+python coherence.py config set terraform-path ./terraform
 
 # Run a drift check
-coherence scan --cloud aws --region us-east-1
+python coherence.py scan --cloud aws --region us-east-1
 
 # View results
-coherence report --format json > drift-report.json
+python coherence.py report --format json > drift-report.json
 
 # Auto-remediate (with approval)
-coherence remediate --severity low --auto-approve
+python coherence.py remediate --severity low --auto-approve
 ```
 
 ## Features
@@ -108,18 +103,15 @@ coherence remediate --severity low --auto-approve
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Web Dashboard (React)                 │
+│         Web Dashboard (server-rendered, Jinja2)          │
 └───────────────────┬─────────────────────────────────────┘
                     │
-        ┌───────────┴──────────────┐
-        │                          │
-┌───────▼────────┐      ┌──────────▼─────────┐
-│  REST API      │      │  WebSocket (Events)│
-│  (Go + Gin)    │      │                    │
-└───────┬────────┘      └────────────────────┘
+┌───────────────────▼─────────────────────────────────────┐
+│              REST API (FastAPI + uvicorn)                 │
+└───────────────────┬─────────────────────────────────────┘
         │
 ┌───────▼──────────────────────────────────────────┐
-│         Coherence Engine (Go)                    │
+│         Coherence Engine (Python)                │
 ├─────────────────────────────────────────────────┤
 │ • Drift Detection Service                       │
 │ • Cloud Provider Adapters (AWS/GCP/Azure)       │
@@ -142,33 +134,26 @@ coherence remediate --severity low --auto-approve
 ```
 coherence/
 ├── backend/
-│   ├── cmd/
-│   │   └── main.go                 # Server entry point
-│   ├── internal/
-│   │   ├── api/                    # REST API handlers
-│   │   ├── drift/                  # Drift detection logic
-│   │   ├── providers/              # Cloud provider adapters
-│   │   ├── iac/                    # IaC parsing
-│   │   ├── remediation/            # Auto-fix logic
-│   │   ├── models/                 # Data models
-│   │   └── config/                 # Configuration
-│   ├── go.mod
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── hooks/
-│   │   └── App.tsx
-│   ├── package.json
+│   ├── app/
+│   │   ├── main.py                 # FastAPI app entry point
+│   │   ├── api.py                  # REST API routes
+│   │   ├── web.py                  # Server-rendered dashboard routes
+│   │   ├── drift.py                # Drift detection logic
+│   │   ├── providers.py            # Cloud provider adapters
+│   │   ├── remediation.py          # Auto-fix logic
+│   │   ├── compliance.py           # Compliance rule checker
+│   │   ├── alerts.py               # Slack/PagerDuty notifiers
+│   │   ├── models.py               # Data models
+│   │   ├── config.py               # Configuration
+│   │   ├── database.py             # DB connection & migrations
+│   │   ├── templates/              # Jinja2 dashboard templates
+│   │   └── static/                 # CSS
+│   ├── tests/
+│   ├── requirements.txt
 │   └── Dockerfile
 ├── cli/
-│   ├── cmd/
-│   │   ├── scan.go
-│   │   ├── remediate.go
-│   │   ├── report.go
-│   │   └── main.go
-│   └── go.mod
+│   ├── coherence.py                # CLI entry point
+│   └── tests/
 ├── database/
 │   ├── migrations/
 │   └── schema.sql
@@ -224,10 +209,10 @@ curl -X POST http://localhost:8080/api/v1/remediate \
 
 ```bash
 # Backend tests
-cd backend && go test ./...
+cd backend && pytest -v
 
-# Frontend tests
-cd frontend && npm test
+# CLI tests
+cd cli && pytest -v
 
 # Integration tests
 ./scripts/integration-test.sh

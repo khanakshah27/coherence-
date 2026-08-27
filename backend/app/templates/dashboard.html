@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <h2 class="page-title">Dashboard</h2>
+    <div style="display:flex;gap:0.75rem;">
+        <form method="get" action="/">
+            <button class="btn btn-secondary" type="submit">Refresh</button>
+        </form>
+        <form method="post" action="/scans" class="scan-form">
+            <select name="cloud_provider">
+                <option value="aws">AWS</option>
+                <option value="gcp">GCP</option>
+                <option value="azure">Azure</option>
+            </select>
+            <input type="text" name="regions" value="us-east-1" placeholder="regions, comma separated">
+            <button class="btn btn-primary" type="submit">+ Start Scan</button>
+        </form>
+    </div>
+</div>
+
+<div class="kpi-grid">
+    <div class="card">
+        <div class="kpi-label">Total Resources</div>
+        <div class="kpi-value">{{ total_resources }}</div>
+        <div class="kpi-sub">Across 3 clouds</div>
+    </div>
+    <div class="card border-red">
+        <div class="kpi-label">Critical Drift</div>
+        <div class="kpi-value red">{{ severity_counts.critical }}</div>
+        <div class="kpi-sub">Requires attention</div>
+    </div>
+    <div class="card border-yellow">
+        <div class="kpi-label">Total Drift</div>
+        <div class="kpi-value yellow">{{ total_drift }}</div>
+        <div class="kpi-sub">Across all severities</div>
+    </div>
+    <div class="card border-blue">
+        <div class="kpi-label">Compliance Status</div>
+        <div class="kpi-value blue">{{ compliance_score }}%</div>
+        <div class="kpi-sub">Of rules passed</div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>Drift Distribution</h3>
+        <div class="bar-chart">
+            {% for label, value, color in severity_bars %}
+            <div class="bar-col">
+                <div class="small" style="color:{{ color }};font-weight:600;">{{ value }}</div>
+                <div class="bar" style="height:{{ value * 2 }}px;background:{{ color }};"></div>
+                <div class="bar-label">{{ label }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card">
+        <h3>Resource Breakdown by Type</h3>
+        <div class="bar-chart">
+            {% for row in resource_types %}
+            <div class="bar-col">
+                <div class="small muted">{{ row.count }} ({{ row.drifted }} drifted)</div>
+                <div class="bar" style="height:{{ row.count * 0.7 }}px;background:#3b82f6;"></div>
+                <div class="bar-label">{{ row.type }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">Recent Scans</div>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Scan ID</th>
+                    <th>Cloud Provider</th>
+                    <th>Status</th>
+                    <th>Drift Found</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if scans %}
+                    {% for scan in scans %}
+                    <tr>
+                        <td class="mono">{{ scan.id[:8] }}</td>
+                        <td style="text-transform:capitalize;">{{ scan.cloud_provider }}</td>
+                        <td>
+                            <span class="badge {{ 'badge-success' if scan.status == 'completed' else ('badge-info' if scan.status == 'running' else 'badge-neutral') }}">
+                                {{ scan.status }}
+                            </span>
+                        </td>
+                        <td>{{ scan.drift_count }}</td>
+                        <td class="muted">{{ scan.created_at }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="5" class="empty-row">No scans found. Start a new scan to begin.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

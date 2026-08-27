@@ -7,8 +7,7 @@ on:
     branches: [main]
 
 env:
-  GO_VERSION: "1.21"
-  NODE_VERSION: "18"
+  PYTHON_VERSION: "3.11"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -46,70 +45,59 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: true
-          cache-dependency-path: backend/go.sum
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
 
       - name: Install dependencies
         working-directory: backend
-        run: go mod download
+        run: pip install -r requirements-dev.txt
 
-      - name: Run vet
+      - name: Lint
         working-directory: backend
-        run: go vet ./...
+        run: ruff check .
 
       - name: Run tests
         working-directory: backend
         env:
           DATABASE_URL: postgresql://coherence:coherence@localhost:5432/coherence_test
           REDIS_URL: redis://localhost:6379
-        run: go test ./... -v -race -coverprofile=coverage.out -covermode=atomic
+        run: pytest -v --cov=app --cov-report=xml
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
-          file: backend/coverage.out
+          file: backend/coverage.xml
           flags: backend
 
-      - name: Build binary
-        working-directory: backend
-        run: CGO_ENABLED=0 GOOS=linux go build -a -o coherence-server cmd/main.go
-
-  # ── Frontend ───────────────────────────────────────────────────────────────
-  frontend-test:
-    name: Frontend Tests
+  # ── CLI ────────────────────────────────────────────────────────────────────
+  cli-test:
+    name: CLI Tests
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
+      - name: Install test dependencies
+        run: pip install pytest
 
-      - name: Run tests
-        working-directory: frontend
-        run: npm test -- --watchAll=false --coverage
-
-      - name: Build
-        working-directory: frontend
-        run: npm run build
+      - name: Run CLI tests
+        working-directory: cli
+        run: pytest -v
 
   # ── Security Scan ─────────────────────────────────────────────────────────
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-    needs: [backend-test, frontend-test]
+    needs: [backend-test, cli-test]
 
     steps:
       - uses: actions/checkout@v4
@@ -133,7 +121,7 @@ jobs:
   docker-build:
     name: Docker Build & Push
     runs-on: ubuntu-latest
-    needs: [backend-test, frontend-test, security-scan]
+    needs: [backend-test, cli-test, security-scan]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
 
     permissions:
@@ -173,22 +161,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Extract metadata for frontend
-        id: meta-frontend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend
-
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
   # ── Deploy to Staging ─────────────────────────────────────────────────────
   deploy-staging:
     name: Deploy to Staging
@@ -217,11 +189,7 @@ jobs:
           kubectl set image deployment/coherence-backend \
             backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:sha-${{ github.sha }} \
             -n coherence-staging
-          kubectl set image deployment/coherence-frontend \
-            frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:sha-${{ github.sha }} \
-            -n coherence-staging
           kubectl rollout status deployment/coherence-backend -n coherence-staging --timeout=120s
-          kubectl rollout status deployment/coherence-frontend -n coherence-staging --timeout=120s
 
   # ── Deploy to Production ──────────────────────────────────────────────────
   deploy-production:
@@ -249,18 +217,14 @@ jobs:
           kubectl set image deployment/coherence-backend \
             backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:sha-${{ github.sha }} \
             -n coherence
-          kubectl set image deployment/coherence-frontend \
-            frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:sha-${{ github.sha }} \
-            -n coherence
           kubectl rollout status deployment/coherence-backend -n coherence --timeout=180s
-          kubectl rollout status deployment/coherence-frontend -n coherence --timeout=180s
 
       - name: Notify Slack on deploy
         uses: slackapi/slack-github-action@v1
         with:
           payload: |
             {
-              "text": "✅ Coherence v${{ github.sha }} deployed to production",
+              "text": "Coherence v${{ github.sha }} deployed to production",
               "channel": "#deployments"
             }
         env:
