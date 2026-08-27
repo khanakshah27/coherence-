@@ -1,0 +1,247 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: coherence
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coherence-config
+  namespace: coherence
+data:
+  DATABASE_URL: "postgresql://coherence:coherence@postgres.coherence.svc.cluster.local:5432/coherence"
+  REDIS_URL: "redis://redis.coherence.svc.cluster.local:6379"
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "info"
+  AWS_REGION: "us-east-1"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: coherence-secrets
+  namespace: coherence
+type: Opaque
+stringData:
+  AWS_ACCESS_KEY_ID: "YOUR_AWS_ACCESS_KEY"
+  AWS_SECRET_ACCESS_KEY: "YOUR_AWS_SECRET_KEY"
+  DB_PASSWORD: "coherence"
+  POSTGRES_PASSWORD: "coherence"
+
+---
+# Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coherence-backend
+  namespace: coherence
+  labels:
+    app: coherence-backend
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: coherence-backend
+  template:
+    metadata:
+      labels:
+        app: coherence-backend
+        version: v1
+    spec:
+      serviceAccountName: coherence
+      containers:
+      - name: backend
+        image: coherence:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: coherence-config
+        - secretRef:
+            name: coherence-secrets
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - coherence-backend
+              topologyKey: kubernetes.io/hostname
+
+---
+# Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: coherence-backend
+  namespace: coherence
+  labels:
+    app: coherence-backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app: coherence-backend
+
+---
+# Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coherence-frontend
+  namespace: coherence
+  labels:
+    app: coherence-frontend
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: coherence-frontend
+  template:
+    metadata:
+      labels:
+        app: coherence-frontend
+        version: v1
+    spec:
+      containers:
+      - name: frontend
+        image: coherence-frontend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+        env:
+        - name: REACT_APP_API_URL
+          value: "https://coherence-api.example.com/api/v1"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+
+---
+# Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: coherence-frontend
+  namespace: coherence
+  labels:
+    app: coherence-frontend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app: coherence-frontend
+
+---
+# RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coherence
+  namespace: coherence
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: coherence
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: coherence
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: coherence
+subjects:
+- kind: ServiceAccount
+  name: coherence
+  namespace: coherence
