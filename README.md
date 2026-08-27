@@ -4,7 +4,7 @@
 
 **Coherence** is an enterprise-grade infrastructure state management platform that continuously detects and remediates drift between your Infrastructure-as-Code (IaC) and actual cloud resources.
 
-## 🎯 Problem Statement
+## Problem Statement
 
 Every organization with Infrastructure-as-Code faces **state drift**:
 - Manual console changes that bypass version control
@@ -15,7 +15,7 @@ Every organization with Infrastructure-as-Code faces **state drift**:
 
 This creates **drift**: the gap between what your code says should exist and what actually exists in your cloud.
 
-## ✨ Solution: Coherence
+## Solution: Coherence
 
 Coherence automatically:
 - **Detects** infrastructure changes across AWS, GCP, Azure in real-time
@@ -25,7 +25,7 @@ Coherence automatically:
 - **Remediates** low-risk drifts with approval workflows
 - **Reports** on compliance and state health with Slack/PagerDuty integration
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Docker & Docker Compose
@@ -75,36 +75,36 @@ coherence report --format json > drift-report.json
 coherence remediate --severity low --auto-approve
 ```
 
-## 📊 Features
+## Features
 
 ### Core Detection
-- ✅ Multi-cloud support (AWS, GCP, Azure)
-- ✅ Real-time drift detection via cloud APIs
-- ✅ Terraform, CloudFormation, Helm support
-- ✅ Custom resource type plugins
+- Multi-cloud support (AWS, GCP, Azure)
+- Real-time drift detection via cloud APIs
+- Terraform, CloudFormation, Helm support
+- Custom resource type plugins
 
 ### Intelligence
-- ✅ Drift severity classification
-- ✅ Audit trail correlation (who changed what, when)
-- ✅ Change impact analysis
-- ✅ Cost impact estimation
-- ✅ Compliance rule checking
+- Drift severity classification
+- Audit trail correlation (who changed what, when)
+- Change impact analysis
+- Cost impact estimation
+- Compliance rule checking
 
 ### Remediation
-- ✅ Intelligent fix suggestions
-- ✅ Safe auto-remediation for low-risk changes
-- ✅ Approval workflows
-- ✅ Rollback capabilities
-- ✅ Dry-run preview
+- Intelligent fix suggestions
+- Safe auto-remediation for low-risk changes
+- Approval workflows
+- Rollback capabilities
+- Dry-run preview
 
 ### Integration & Observability
-- ✅ Slack/PagerDuty alerting
-- ✅ GitHub webhook integration
-- ✅ REST API (OpenAPI spec)
-- ✅ Prometheus metrics
-- ✅ Audit logging
+- Slack/PagerDuty alerting
+- GitHub webhook integration
+- REST API (OpenAPI spec)
+- Prometheus metrics
+- Audit logging
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -137,7 +137,7 @@ coherence remediate --severity low --auto-approve
 └──────────┘  └──────────┘  └───────────┘  └────────────┘
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 coherence/
@@ -190,7 +190,7 @@ coherence/
     └── SETUP.md
 ```
 
-## 🔌 API Examples
+## API Examples
 
 ### Trigger Drift Scan
 ```bash
@@ -220,7 +220,7 @@ curl -X POST http://localhost:8080/api/v1/remediate \
   }'
 ```
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Backend tests
@@ -236,7 +236,7 @@ cd frontend && npm test
 ./scripts/load-test.sh
 ```
 
-## 📦 Deployment
+## Deployment
 
 ### Docker Compose (Development)
 ```bash
@@ -255,7 +255,7 @@ terraform init
 terraform apply
 ```
 
-## 🔐 Security
+## Security
 
 - End-to-end encryption for cloud credentials
 - RBAC with teams and permissions
@@ -263,7 +263,7 @@ terraform apply
 - Secrets stored in encrypted vault
 - Regular security scanning (Trivy, Snyk)
 
-## 📊 Use Cases
+## Use Cases
 
 ### Platform Teams
 Maintain infrastructure compliance without manual audits
@@ -280,15 +280,15 @@ Ensure security groups and IAM policies match compliance rules
 ### Dev Teams
 Understand infrastructure changes that affect their services
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-## 📄 License
+## License
 
 MIT
 
-## 📧 Support
+## Support
 
 - Docs: https://coherence-docs.dev
 - Issues: GitHub Issues
