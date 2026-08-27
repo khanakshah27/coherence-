@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 Setting up Coherence..."
+echo "Setting up Coherence..."
 
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
@@ -21,7 +21,7 @@ fi
 
 # Create .env file if it doesn't exist
 if [ ! -f .env ]; then
-    echo "📝 Creating .env file..."
+    echo "Creating .env file..."
     cat > .env << EOF
 # Coherence Configuration
 ENVIRONMENT=development
@@ -63,10 +63,10 @@ sleep 5
 echo ""
 echo "✅ Setup complete!"
 echo ""
-echo "📋 Next steps:"
+echo "Next steps:"
 echo "  1. Dashboard & API: http://localhost:8080"
 echo "  2. Prometheus: http://localhost:9090"
 echo "  3. Grafana: http://localhost:3001 (admin/admin)"
 echo ""
-echo "📚 Documentation: https://coherence-docs.dev"
+echo "Documentation: https://coherence-docs.dev"
 echo ""
