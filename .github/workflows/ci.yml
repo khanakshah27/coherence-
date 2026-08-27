@@ -174,27 +174,30 @@ jobs:
     environment:
       name: staging
       url: https://staging.coherence.dev
+    env:
+      HAS_KUBECONFIG: ${{ secrets.STAGING_KUBECONFIG != '' }}
 
     steps:
       - uses: actions/checkout@v4
 
       # These deploy steps are no-ops until STAGING_KUBECONFIG is configured
       # as a repository secret, so the job succeeds instead of failing on a
-      # cluster that doesn't exist yet.
+      # cluster that doesn't exist yet. (The `secrets` context can't be used
+      # directly in `if:`, so it's routed through `env` above.)
       - name: Set up kubectl
-        if: ${{ secrets.STAGING_KUBECONFIG != '' }}
+        if: env.HAS_KUBECONFIG == 'true'
         uses: azure/setup-kubectl@v3
         with:
           version: latest
 
       - name: Configure kubeconfig
-        if: ${{ secrets.STAGING_KUBECONFIG != '' }}
+        if: env.HAS_KUBECONFIG == 'true'
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > $HOME/.kube/config
 
       - name: Deploy to Kubernetes (staging)
-        if: ${{ secrets.STAGING_KUBECONFIG != '' }}
+        if: env.HAS_KUBECONFIG == 'true'
         run: |
           kubectl set image deployment/coherence-backend \
             backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:sha-${{ github.sha }} \
@@ -202,7 +205,7 @@ jobs:
           kubectl rollout status deployment/coherence-backend -n coherence-staging --timeout=120s
 
       - name: Skip notice
-        if: ${{ secrets.STAGING_KUBECONFIG == '' }}
+        if: env.HAS_KUBECONFIG != 'true'
         run: echo "STAGING_KUBECONFIG is not configured; skipping deploy."
 
   # ── Deploy to Production ──────────────────────────────────────────────────
@@ -214,25 +217,29 @@ jobs:
     environment:
       name: production
       url: https://coherence.dev
+    env:
+      HAS_KUBECONFIG: ${{ secrets.PRODUCTION_KUBECONFIG != '' }}
+      HAS_SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
 
     steps:
       - uses: actions/checkout@v4
 
       # These deploy steps are no-ops until PRODUCTION_KUBECONFIG is
       # configured as a repository secret, so the job succeeds instead of
-      # failing on a cluster that doesn't exist yet.
+      # failing on a cluster that doesn't exist yet. (The `secrets` context
+      # can't be used directly in `if:`, so it's routed through `env` above.)
       - name: Set up kubectl
-        if: ${{ secrets.PRODUCTION_KUBECONFIG != '' }}
+        if: env.HAS_KUBECONFIG == 'true'
         uses: azure/setup-kubectl@v3
 
       - name: Configure kubeconfig
-        if: ${{ secrets.PRODUCTION_KUBECONFIG != '' }}
+        if: env.HAS_KUBECONFIG == 'true'
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.PRODUCTION_KUBECONFIG }}" | base64 -d > $HOME/.kube/config
 
       - name: Deploy to Kubernetes (production)
-        if: ${{ secrets.PRODUCTION_KUBECONFIG != '' }}
+        if: env.HAS_KUBECONFIG == 'true'
         run: |
           kubectl set image deployment/coherence-backend \
             backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:sha-${{ github.sha }} \
@@ -240,7 +247,7 @@ jobs:
           kubectl rollout status deployment/coherence-backend -n coherence --timeout=180s
 
       - name: Notify Slack on deploy
-        if: ${{ secrets.PRODUCTION_KUBECONFIG != '' && secrets.SLACK_WEBHOOK_URL != '' }}
+        if: env.HAS_KUBECONFIG == 'true' && env.HAS_SLACK_WEBHOOK == 'true'
         uses: slackapi/slack-github-action@v1
         with:
           payload: |
@@ -252,5 +259,5 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Skip notice
-        if: ${{ secrets.PRODUCTION_KUBECONFIG == '' }}
+        if: env.HAS_KUBECONFIG != 'true'
         run: echo "PRODUCTION_KUBECONFIG is not configured; skipping deploy."
